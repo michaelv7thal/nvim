@@ -95,9 +95,6 @@ null_ls.setup({
         -- SQL formatter
         null_ls.builtins.formatting.sqlfmt,
 
-        -- lua formatter
-        null_ls.builtins.formatting.lua_format,
-
     }
 })
 
@@ -110,6 +107,5 @@ vim.cmd [[
         autocmd BufWritePre *.py lua vim.lsp.buf.format({ async = false })
         autocmd BufWritePre *.sql lua vim.lsp.buf.format({ async = false })
         autocmd BufWritePRe *.rs lua vim.lsp.buf.format({async = false})
-        autocmd BufWritePRe *.lua lua vim.lsp.buf.format({async = false})
     augroup END
 ]]

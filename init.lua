@@ -12,9 +12,9 @@ vim.cmd("colorscheme rose-pine")
 -- vim.cmd [[hi Normal guibg=NONE ctermbg=NONE]]
 
 -- bar settings
-require ('lualine').setup {
+require('lualine').setup {
     options = {
-        theme='rose-pine'
+        theme = 'rose-pine'
     }
 }
 
@@ -31,7 +31,3 @@ vim.api.nvim_create_autocmd("BufEnter", {
 
 -- add automatic double quotes and bracing
 require('nvim-autopairs').setup {}
-
-
-
-
