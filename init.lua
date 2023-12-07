@@ -31,3 +31,6 @@ vim.api.nvim_create_autocmd("BufEnter", {
 
 -- add automatic double quotes and bracing
 require('nvim-autopairs').setup {}
+
+-- setup python environment for nvim
+vim.g.python3_host_prog= '/Users/michael/.pyenv/versions/3.11.6/bin/python'
