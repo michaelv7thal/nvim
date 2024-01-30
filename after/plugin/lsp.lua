@@ -10,7 +10,10 @@ require("mason-lspconfig").setup {
 }
 
 vim.diagnostic.config({
-    virtual_text = false,
+    virtual_text = true,
+    severity = {
+        min = vim.diagnostic.severity.ERROR
+    }
 })
 
 local lsp = require('lsp-zero')
@@ -23,8 +26,8 @@ lsp.configure('pylsp', {
         pylsp = {
             plugins = {
                 pycodestyle = {
-                    ignore = { 'E501' }, -- Ignore E501 line too long
-                    maxLineLength = 80   -- Or set a custom max line length
+                    ignore = { 'E501', 'W503' }, -- Ignore E501 line too long
+                    maxLineLength = 80           -- Or set a custom max line length
                 }
             }
         }
@@ -95,6 +98,9 @@ null_ls.setup({
         -- SQL formatter
         null_ls.builtins.formatting.sqlfmt,
 
+        -- lua formatter
+        null_ls.builtins.formatting.lua_format,
+
     }
 })
 
@@ -107,5 +113,6 @@ vim.cmd [[
         autocmd BufWritePre *.py lua vim.lsp.buf.format({ async = false })
         autocmd BufWritePre *.sql lua vim.lsp.buf.format({ async = false })
         autocmd BufWritePRe *.rs lua vim.lsp.buf.format({async = false})
+        autocmd BufWritePRe *.lua lua vim.lsp.buf.format({async = false})
     augroup END
 ]]

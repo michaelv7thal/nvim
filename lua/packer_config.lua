@@ -24,6 +24,7 @@ require('packer').startup(function(use)
     use 'nvim-tree/nvim-web-devicons'
     use 'mbbill/undotree'
     use 'theprimeagen/harpoon'
+    use 'ThePrimeagen/refactoring.nvim'
     use 'nvimtools/none-ls.nvim'
     use {
         'VonHeikemen/lsp-zero.nvim',

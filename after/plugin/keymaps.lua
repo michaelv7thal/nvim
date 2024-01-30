@@ -1,6 +1,5 @@
-
 -- Key Mappings
-vim.api.nvim_set_keymap('n', '<C-n>', ':NvimTreeFindFileToggle<CR>', {noremap = true,silent = true})
+vim.api.nvim_set_keymap('n', '<C-n>', ':NvimTreeFindFileToggle<CR>', { noremap = true, silent = true })
 
 -- set termguicolors to enable highlight groups
 vim.opt.termguicolors = true
@@ -22,4 +21,4 @@ vim.api.nvim_set_keymap('n', '<C-k>', '<C-w>k', { noremap = true, silent = true 
 vim.api.nvim_set_keymap('n', '<C-l>', '<C-w>l', { noremap = true, silent = true })
 
 -- add keybinding for tagbar
-vim.api.nvim_set_keymap('n', '<leader>T',':Tagbar<CR>', {silent = true})
+vim.api.nvim_set_keymap('n', '<leader>T', ':Tagbar<CR>', { silent = true })
