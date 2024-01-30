@@ -14,7 +14,7 @@ require('packer').startup(function(use)
     use 'morhetz/gruvbox'
     use { 'nvim-telescope/telescope.nvim', tag = '0.1.4',
         requires = { { 'nvim-lua/plenary.nvim' } } }
-    use 'nvim-treesitter/nvim-treesitter'
+    use { 'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' }
     use 'nvim-treesitter/playground'
     use 'sharkdp/fd'
     use({ 'rose-pine/neovim', as = 'rose-pine' })
