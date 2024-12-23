@@ -61,4 +61,17 @@ return {
       })
     end,
   },
+  -- Add vim-fugitive
+  {
+    "tpope/vim-fugitive",
+    cmd = { "Git", "Gstatus", "Gcommit", "Gpush", "Gpull", "Gdiffsplit" }, -- Lazy load on Git commands
+    config = function()
+      -- Optional: Add custom key mappings or configurations for fugitive
+      vim.keymap.set("n", "<leader>gs", ":Git<CR>", { desc = "Git status" })
+      vim.keymap.set("n", "<leader>gd", ":Gdiffsplit<CR>", { desc = "Git diff" })
+      vim.keymap.set("n", "<leader>gc", ":Gcommit<CR>", { desc = "Git commit" })
+      vim.keymap.set("n", "<leader>gp", ":Gpush<CR>", { desc = "Git push" })
+      vim.keymap.set("n", "<leader>gl", ":Gpull<CR>", { desc = "Git pull" })
+    end,
+  },
 }

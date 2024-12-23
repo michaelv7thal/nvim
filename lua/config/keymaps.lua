@@ -1,4 +1,4 @@
-
+local telescope = require('telescope')
 local builtin = require('telescope.builtin')
 
 -- Helper function to determine the working directory
@@ -11,25 +11,56 @@ local function get_cwd()
     end
 end
 
+-- Setup Telescope
+telescope.setup({
+    defaults = {
+        vimgrep_arguments = {
+            "rg", "--color=never", "--no-heading", "--with-filename", "--line-number",
+            "--column", "--smart-case", "--hidden", "--glob", "!.git/*" -- Include hidden files, exclude .git
+        },
+        prompt_prefix = "🔍 ",
+        selection_caret = " ",
+        path_display = { "smart" },
+        mappings = {
+            i = { ["<Esc>"] = require("telescope.actions").close }, -- Close with Esc in insert mode
+        },
+    },
+    pickers = {
+        find_files = { hidden = true },
+        live_grep = { additional_args = function() return { "--hidden" } end },
+    },
+    extensions = {
+        -- Add extensions here (e.g., fzf, file_browser)
+    },
+})
 
-vim.keymap.set("n","<leader>ff", function()
-    builtin.find_files({
-        hidden = true,
-        cwd = get_cwd(),
-    })
-end, { desc = "Telescope find files (root, hidden)" })
+-- Key mappings for Telescope
+local mappings = {
+    -- Search all files from the computer root
+    { "<leader>ff", function() builtin.find_files({ hidden = true, cwd = "/" }) end, "Find files (computer root)" },
 
-vim.keymap.set("n", "<leader>fg", function()
-    builtin.live_grep({
-        cwd = get_cwd(),
-        additional_args = function()
-            return { "--hidden" }
-        end,
-    })
-end, { desc = "Telescope live grep (root, hidden)"})
+    -- Search files from the current folder or Git root
+    { "<leader>fr", function() builtin.find_files({ hidden = true, cwd = get_cwd() }) end, "Find files (cwd or Git root)" },
 
-vim.keymap.set('n', '<leader>fb', builtin.buffers, { desc = 'Telescope buffers' })
-vim.keymap.set('n', '<leader>fh', builtin.help_tags, { desc = 'Telescope help tags' })
+    -- Live grep from the current folder or Git root
+    { "<leader>fg", function() builtin.live_grep({ cwd = get_cwd() }) end, "Live grep (cwd or Git root)" },
+
+    -- Search open buffers
+    { "<leader>fb", builtin.buffers, "Search buffers" },
+
+    -- Search Neovim help tags
+    { "<leader>fh", builtin.help_tags, "Help tags" },
+
+    -- Search Treesitter symbols
+    { "<leader>ft", builtin.treesitter, "Treesitter symbols" },
+
+    -- Search marks in the current session
+    { "<leader>fm", builtin.marks, "Marks" },
+}
+
+for _, map in ipairs(mappings) do
+    vim.keymap.set("n", map[1], map[2], { desc = map[3] })
+end
 
 -- NVIM Tree
 vim.keymap.set("n", "<leader>e", "<cmd>NvimTreeToggle<cr>", { desc = "Toggle Nvim Tree" })
