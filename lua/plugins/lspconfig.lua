@@ -15,10 +15,9 @@ return {
             require('mason-lspconfig').setup({
                 ensure_installed = {
                 'pyright',          -- Python
-                'tsserver',         -- JS/TS
+                'ts_ls',         -- JS/TS
                 'omnisharp',        -- C#
                 'rust_analyzer',    -- Rust
-                'gopls',             -- Go
                 'clangd',            -- C/C++
                 }
             })
