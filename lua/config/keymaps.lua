@@ -119,3 +119,12 @@ vim.keymap.set({ "n", "x" }, "<leader>ri", function() require('refactoring').ref
 vim.keymap.set("n", "<leader>rb", function() require('refactoring').refactor('Extract Block') end, { noremap = true, silent = true })
 vim.keymap.set("n", "<leader>rbf", function() require('refactoring').refactor('Extract Block To File') end, { noremap = true, silent = true })
 -- Extract Block supports only normal mode
+
+
+-- copy paste keymaps
+vim.keymap.set("v", "<C-c>", '"+y', { noremap = true, silent = true })
+vim.keymap.set("n", "<C-c>", '"+yy', { noremap = true, silent = true })
+
+vim.keymap.set("n", "<C-v>", '"+p', { noremap = true, silent = true })
+vim.keymap.set("i", "<C-v>", '<C-r>+', { noremap = true, silent = true })
+
