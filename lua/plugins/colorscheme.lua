@@ -1,12 +1,17 @@
 
 return {
 	{
-		"rose-pine/neovim",
-		name = "rose-pine",
-		lazy = flase,
+		"catppuccin/nvim",
+		name = "catppuccin",
+		lazy = false,
 		priority = 1000,
 		config = function()
-			vim.cmd([[colorscheme rose-pine]])
+			require("catppuccin").setup({
+				flavour = "mocha", -- Options: latte, frappe, macchiato, mocha
+			})
+			vim.cmd([[colorscheme catppuccin]])
 		end,
 	},
 }
+
+
