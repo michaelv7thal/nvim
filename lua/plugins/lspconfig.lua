@@ -20,8 +20,39 @@ return {
                 local opts = { buffer = bufnr, silent = true, noremap = true }
                 local keymap = vim.keymap.set
 
-                keymap("n", "gd", vim.lsp.buf.definition, opts)
-                keymap("n", "gu", "<cmd>Telescope lsp_references<CR>", opts)
+                keymap("n", "gd", function()
+                    local params = vim.lsp.util.make_position_params()
+                    vim.lsp.buf_request(0, "textDocument/definition", params, function(err, result)
+                        if err or not result or vim.tbl_isempty(result) then
+                            vim.notify("No definition found", vim.log.levels.INFO)
+                            return
+                        end
+
+                        -- Normalize result: sometimes it's LocationLink[]
+                        if vim.tbl_islist(result) and #result == 1 then
+                            local location = result[1].targetUri and result[1] or result[1]
+                            vim.lsp.util.jump_to_location(location, "utf-8")
+                        else
+                            require("telescope.builtin").lsp_definitions()
+                        end
+                    end)
+                end, opts)
+
+
+                keymap("n", "gu", function()
+                    local params = vim.lsp.util.make_position_params()
+                    params.context = { includeDeclaration = true } -- important: includes declaration site
+                    vim.lsp.buf_request(0, "textDocument/references", params, function(err, result)
+                        if err or not result or vim.tbl_isempty(result) then
+                            vim.notify("No references found", vim.log.levels.INFO)
+                            return
+                        end
+
+                        -- Always show in Telescope for better navigation context
+                        require("telescope.builtin").lsp_references()
+                    end)
+                end, opts)
+
                 keymap("n", "K", vim.lsp.buf.hover, opts)
                 keymap("n", "<leader>rn", vim.lsp.buf.rename, opts)
                 keymap("n", "<leader>ca", vim.lsp.buf.code_action, opts)
