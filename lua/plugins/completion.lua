@@ -1,25 +1,51 @@
+-- Enable Copilot for all filetypes
+vim.g.copilot_filetypes = {
+    ["*"] = true,
+}
+
+-- Disable Copilot's default <Tab> keymap to avoid conflict with nvim-cmp
+vim.g.copilot_no_tab_map = true
+
+
 return {
-    -- Core completion plugins
-    { 'hrsh7th/nvim-cmp',   -- Main completion plugin
+    -- GitHub Copilot core plugin (must load before copilot-cmp)
+    {
+        'github/copilot.vim',
+        lazy = false, -- always load
+    },
+
+    -- Completion core
+    {
+        'hrsh7th/nvim-cmp',
         dependencies = {
-            'hrsh7th/cmp-nvim-lsp',  -- LSP completion
-            'hrsh7th/cmp-buffer',    -- Buffer completion
-            'hrsh7th/cmp-path',      -- File path completion
-            'hrsh7th/cmp-vsnip',     -- Snippet completion
-            'hrsh7th/vim-vsnip',     -- Snippet engine
-            'zbirenbaum/copilot-cmp' -- GitHub Copilot integration
+            'hrsh7th/cmp-nvim-lsp',   -- LSP completion
+            'hrsh7th/cmp-buffer',     -- Buffer completion
+            'hrsh7th/cmp-path',       -- File path completion
+            'hrsh7th/cmp-vsnip',      -- Snippet completion
+            'hrsh7th/vim-vsnip',      -- Snippet engine
+            {
+                'zbirenbaum/copilot-cmp',
+                dependencies = { 'github/copilot.vim' },
+                config = function()
+                    require("copilot_cmp").setup()
+                end,
+            },
         },
         config = function()
             local cmp = require('cmp')
 
             local function feedkey(key, mode)
-                vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes(key, true, true, true), mode, true)
+                vim.api.nvim_feedkeys(
+                    vim.api.nvim_replace_termcodes(key, true, true, true),
+                    mode,
+                    true
+                )
             end
 
             cmp.setup({
                 snippet = {
                     expand = function(args)
-                        vim.fn["vsnip#anonymous"](args.body) -- For vsnip users
+                        vim.fn["vsnip#anonymous"](args.body)
                     end,
                 },
                 mapping = cmp.mapping.preset.insert({
@@ -27,7 +53,7 @@ return {
                     ['<C-f>'] = cmp.mapping.scroll_docs(4),
                     ['<C-Space>'] = cmp.mapping.complete(),
                     ['<C-e>'] = cmp.mapping.abort(),
-                    ['<CR>'] = cmp.mapping.confirm({ select = true }), -- Accept currently selected item
+                    ['<CR>'] = cmp.mapping.confirm({ select = true }),
                     ['<Tab>'] = cmp.mapping(function(fallback)
                         if cmp.visible() then
                             cmp.select_next_item()
@@ -57,7 +83,6 @@ return {
                 }),
                 formatting = {
                     format = function(entry, vim_item)
-                        -- Customize the appearance of completion items
                         vim_item.menu = ({
                             nvim_lsp = "[LSP]",
                             copilot = "[Copilot]",
@@ -69,19 +94,19 @@ return {
                     end,
                 },
                 experimental = {
-                    ghost_text = true, -- Show ghost text for Copilot suggestions
+                    ghost_text = true, -- Copilot ghost text enabled
                 },
             })
 
-            -- Setup for specific filetypes if needed
+            -- Git commit completion (optional: requires 'petertriho/cmp-git')
             cmp.setup.filetype('gitcommit', {
                 sources = cmp.config.sources({
-                    { name = 'cmp_git' }, -- git completions
+                    { name = 'cmp_git' }, -- only works if cmp-git is installed
                 }, {
                     { name = 'buffer' },
-                })
+                }),
             })
         end,
     },
-    { 'github/copilot.vim' } -- GitHub Copilot integration
 }
+
