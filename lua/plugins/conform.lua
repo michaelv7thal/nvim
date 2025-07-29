@@ -15,6 +15,8 @@ return {
             go = { "gofmt" },
             cpp = { "clang-format" },
             c = { "clang-format" },
+            html = { "prettier" },
+            css = { "prettier"},
         },
     },
 }

@@ -68,6 +68,9 @@ return {
                     "vtsls",
                     "eslint",
                     "rust_analyzer",
+                    "html",
+                    "cssls",
+                    "r_language_server",
                 },
                 automatic_installation = true,
             })

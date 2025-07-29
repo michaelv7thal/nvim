@@ -16,6 +16,7 @@ return {
                 "markdown",  -- Markdown
                 "rust",     -- Rus
             },
+            autotag = { enable = true },
             highlight = { enable = true },
             incremental_selection = { enable = true },
             indent = { enable = true },
