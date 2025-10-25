@@ -163,3 +163,8 @@ vim.keymap.set("n", "<leader>w", ":w<CR>", { noremap = true, silent = true, desc
 vim.keymap.set("n", "<leader>q", ":q<CR>", { noremap = true, silent = true, desc = "Quit" })
 vim.keymap.set("n", "<leader>Q", ":qa!<CR>", { noremap = true, silent = true, desc = "Quit all without saving" })
 
+-- File runner - Execute current file in terminal
+vim.keymap.set("n", "<leader>r", function()
+    require("utils.runner").run_file()
+end, { noremap = true, silent = true, desc = "Run current file in terminal" })
+
