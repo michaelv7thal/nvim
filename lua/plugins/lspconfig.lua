@@ -117,18 +117,16 @@ return {
                     "pyright",
                     "clangd",
                     "vtsls",
+                    "angularls",
                     "eslint",
                     "rust_analyzer",
                     "html",
                     "cssls",
-                    "lua_ls", -- Best practice: Add lua_ls for Neovim config editing
+                    "lua_ls",
                 },
                 automatic_installation = true,
             })
 
-            -- CRITICAL: Actually configure the LSP servers
-            -- Using modern vim.lsp.config API (Neovim 0.11+)
-            
             -- Define server-specific configurations
             local server_configs = {
                 lua_ls = {
@@ -136,7 +134,7 @@ return {
                         Lua = {
                             runtime = { version = "LuaJIT" },
                             diagnostics = {
-                                globals = { "vim" }, -- Recognize 'vim' global
+                                globals = { "vim" },
                             },
                             workspace = {
                                 library = vim.api.nvim_get_runtime_file("", true),
@@ -156,6 +154,41 @@ return {
                             },
                         },
                     },
+                },
+                vtsls = {
+                    settings = {
+                        typescript = {
+                            updateImportsOnFileMove = { enabled = "always" },
+                            suggest = {
+                                completeFunctionCalls = true,
+                            },
+                            inlayHints = {
+                                parameterNames = { enabled = "literals" },
+                                parameterTypes = { enabled = true },
+                                variableTypes = { enabled = true },
+                                propertyDeclarationTypes = { enabled = true },
+                                functionLikeReturnTypes = { enabled = true },
+                                enumMemberValues = { enabled = true },
+                            },
+                        },
+                        javascript = {
+                            updateImportsOnFileMove = { enabled = "always" },
+                            suggest = {
+                                completeFunctionCalls = true,
+                            },
+                            inlayHints = {
+                                parameterNames = { enabled = "literals" },
+                                parameterTypes = { enabled = true },
+                                variableTypes = { enabled = true },
+                                propertyDeclarationTypes = { enabled = true },
+                                functionLikeReturnTypes = { enabled = true },
+                                enumMemberValues = { enabled = true },
+                            },
+                        },
+                    },
+                },
+                angularls = {
+                    -- Angular Language Server for template support
                 },
                 clangd = {
                     cmd = {
@@ -178,25 +211,30 @@ return {
                 },
             }
 
-            -- Setup all installed servers using modern API
+            -- Configure and setup all LSP servers
+            -- Suppress deprecation warning until mason-lspconfig adopts new API
+            ---@diagnostic disable-next-line: deprecated
+            local lspconfig = require("lspconfig")
+
             local function setup_servers()
                 local installed = mason_lspconfig.get_installed_servers()
                 for _, server_name in ipairs(installed) do
-                    -- Merge default config with server-specific config
-                    local config = vim.tbl_deep_extend("force", {
-                        capabilities = capabilities,
-                        handlers = handlers,
-                    }, server_configs[server_name] or {})
-                    
-                    -- Use modern vim.lsp.config API
-                    vim.lsp.config(server_name, config)
-                    
-                    -- Enable the server for appropriate filetypes
-                    vim.lsp.enable(server_name)
+                    local config = server_configs[server_name] or {}
+                    config.capabilities = capabilities
+                    config.handlers = handlers
+                    config.on_attach = on_attach
+
+                    lspconfig[server_name].setup(config)
                 end
             end
 
-            -- Setup on_attach via LspAttach autocmd (modern approach)
+            setup_servers()
+
+            vim.api.nvim_create_autocmd("User", {
+                pattern = "MasonToolsUpdateCompleted",
+                callback = setup_servers,
+            })
+
             vim.api.nvim_create_autocmd("LspAttach", {
                 callback = function(args)
                     local client = vim.lsp.get_client_by_id(args.data.client_id)
@@ -204,15 +242,6 @@ return {
                         on_attach(client, args.buf)
                     end
                 end,
-            })
-
-            -- Setup servers now
-            setup_servers()
-
-            -- Re-setup when new servers are installed
-            vim.api.nvim_create_autocmd("User", {
-                pattern = "MasonToolsUpdateCompleted",
-                callback = setup_servers,
             })
         end,
     },

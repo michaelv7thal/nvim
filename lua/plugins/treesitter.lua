@@ -13,8 +13,10 @@ return {
                 "html",      -- HTML
                 "css",       -- CSS
                 "json",      -- JSON
+                "jsonc",     -- JSON with Comments (for devcontainer.json)
                 "markdown",  -- Markdown
-                "rust",     -- Rus
+                "rust",      -- Rust
+                "dockerfile", -- Dockerfile
             },
             autotag = { enable = true },
             highlight = { enable = true },
