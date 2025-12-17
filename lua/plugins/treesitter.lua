@@ -1,60 +1,45 @@
 return {
-  -- Treesitter configuration
-  {
-    "nvim-treesitter/nvim-treesitter",
-    build = ":TSUpdate",
-    config = function()
-      require("nvim-treesitter.configs").setup({
-        -- Install languages
-        ensure_installed = {
-          "lua",                      -- Lua
-          "vim",                      -- Vimscript
-          "vimdoc",                   -- vimdoc
-          "query",
-          "bash",                     -- Bash
-          "python",                   -- Python
-          "javascript",               -- JavaScript
-          "typescript",               -- TypeScript
-          "tsx",                      -- TSX
-          "c",                        -- C
-          "cpp",                      -- C++
-          "go",                       -- Go
-          "html",                     -- HTML
-          "css",                      -- CSS
-          "json",                     -- JSON
-          "markdown",                 -- Markdown
-          "rust",                     -- Rust
-        },
-        sync_install = false,         -- Install parsers synchronously (only applied to `ensure_installed`)
-        auto_install = true,          -- Automatically install missing parsers when entering buffer
-        ignore_install = {},          -- List of parsers to ignore installing
-        modules = {},                 -- List of modules (required field)
+  "nvim-treesitter/nvim-treesitter",
+  build = ":TSUpdate",
+  event = { "BufReadPost", "BufNewFile" },
+  dependencies = {
+    "nvim-treesitter/nvim-treesitter-textobjects",
+  },
+  config = function()
+    require("nvim-treesitter.configs").setup({
+      -- Required fields (fixes the warning)
+      modules = {},
+      sync_install = false,
+      ignore_install = {},
+      auto_install = true,
 
-        highlight = {
-          enable = true,
-          additional_vim_regex_highlighting = false,
+      -- Parser installation
+      ensure_installed = {
+        "lua", "vim", "vimdoc", "query",
+        "javascript", "typescript", "tsx",
+        "python", "rust", "go",
+        "html", "css", "json",
+        "markdown", "markdown_inline",
+        "bash", "c", "cpp",
+      },
+
+      -- Features
+      highlight = {
+        enable = true,
+        additional_vim_regex_highlighting = false,
+      },
+      indent = {
+        enable = true
+      },
+      incremental_selection = {
+        enable = true,
+        keymaps = {
+          init_selection = "<C-space>",
+          node_incremental = "<C-space>",
+          scope_incremental = false,
+          node_decremental = "<bs>",
         },
-        incremental_selection = {
-          enable = true,
-          keymaps = {
-            init_selection = "gnn",
-            node_incremental = "grn",
-            scope_incremental = "grc",
-            node_decremental = "grm",
-          },
-        },
-        indent = { enable = true },
-      })
-    end,
-  },
-  -- Autotag as separate plugin (fixes deprecation warning)
-  {
-    "windwp/nvim-ts-autotag",
-    event = "InsertEnter",
-    opts = {
-      enable_close = true,                -- Auto close tags
-      enable_rename = true,               -- Auto rename pairs of tags
-      enable_close_on_slash = false       -- Auto close on trailing </
-    },
-  },
+      },
+    })
+  end,
 }
