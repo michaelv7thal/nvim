@@ -2,18 +2,14 @@
 vim.g.copilot_filetypes = {
     ["*"] = true,
 }
-
 -- Disable Copilot's default <Tab> keymap to avoid conflict with nvim-cmp
 vim.g.copilot_no_tab_map = true
-
-
 return {
     -- GitHub Copilot core plugin (must load before copilot-cmp)
     {
         'github/copilot.vim',
         lazy = false, -- always load
     },
-
     -- Completion core
     {
         'hrsh7th/nvim-cmp',
@@ -33,7 +29,6 @@ return {
         },
         config = function()
             local cmp = require('cmp')
-
             local function feedkey(key, mode)
                 vim.api.nvim_feedkeys(
                     vim.api.nvim_replace_termcodes(key, true, true, true),
@@ -41,7 +36,6 @@ return {
                     true
                 )
             end
-
             cmp.setup({
                 snippet = {
                     expand = function(args)
@@ -97,7 +91,6 @@ return {
                     ghost_text = true, -- Copilot ghost text enabled
                 },
             })
-
             -- Git commit completion (optional: requires 'petertriho/cmp-git')
             cmp.setup.filetype('gitcommit', {
                 sources = cmp.config.sources({
@@ -109,4 +102,3 @@ return {
         end,
     },
 }
-
