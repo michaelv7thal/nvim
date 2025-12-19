@@ -83,6 +83,7 @@ return {
           "html",
           "cssls",
           "lua_ls",
+          "angularls",
         },
         automatic_installation = true,
       })
@@ -172,6 +173,6 @@ return {
         pattern = "MasonToolsUpdateCompleted",
         callback = setup_servers,
       })
-      end,
+    end,
   },
 }

@@ -54,7 +54,13 @@ return {
                         elseif vim.fn["vsnip#expandable"]() == 1 then
                             feedkey("<Plug>(vsnip-expand-or-jump)", "")
                         else
-                            fallback()
+                            -- Accept Copilot suggestion if available
+                            local copilot_keys = vim.fn['copilot#Accept']()
+                            if copilot_keys ~= '' then
+                                vim.api.nvim_feedkeys(copilot_keys, 'i', true)
+                            else
+                                fallback()
+                            end
                         end
                     end, { "i", "s" }),
                     ['<S-Tab>'] = cmp.mapping(function(fallback)
