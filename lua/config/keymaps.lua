@@ -176,6 +176,17 @@ vim.keymap.set("n", "<leader>r", function()
     require("utils.runner").run_file()
 end, { noremap = true, silent = true, desc = "Run current file in terminal" })
 
+-- DevContainer keybindings
+vim.keymap.set("n", "<leader>dcu", "<cmd>DevcontainerStart<cr>", { desc = "DevContainer: Start (Up)" })
+vim.keymap.set("n", "<leader>dcd", "<cmd>DevcontainerStop<cr>", { desc = "DevContainer: Stop (Down)" })
+vim.keymap.set("n", "<leader>dca", "<cmd>DevcontainerAttach<cr>", { desc = "DevContainer: Attach shell" })
+vim.keymap.set("n", "<leader>dcb", "<cmd>DevcontainerBuild<cr>", { desc = "DevContainer: Build" })
+vim.keymap.set("n", "<leader>dcr", "<cmd>DevcontainerRemove<cr>", { desc = "DevContainer: Remove containers" })
+vim.keymap.set("n", "<leader>dci", "<cmd>DevcontainerInfo<cr>", { desc = "DevContainer: Info" })
+vim.keymap.set("n", "<leader>dcl", "<cmd>DevcontainerLogs<cr>", { desc = "DevContainer: View logs" })
+vim.keymap.set("n", "<leader>dce", "<cmd>DevcontainerExec ", { desc = "DevContainer: Execute command" })
+vim.keymap.set("n", "<leader>dco", "<cmd>DevcontainerOpenNearestConfig<cr>", { desc = "DevContainer: Open config" })
+
 -- LSP Keybindings (buffer-local, set on LspAttach)
 vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(args)
