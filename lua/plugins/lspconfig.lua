@@ -21,7 +21,7 @@ return {
 
       local on_attach = function(client, bufnr)
         -- Disable formatting for certain LSPs if using conform.nvim
-        if client.name == "tsserver" or client.name == "vtsls" then
+        if client.name == "ts_ls" or client.name == "vtsls" then
           client.server_capabilities.documentFormattingProvider = false
         end
 
@@ -42,6 +42,10 @@ return {
         end
       end
 
+      -- Rounded borders for all floating windows (hover, signature help,
+      -- diagnostics). Replaces the deprecated vim.lsp.with(...) handlers.
+      vim.o.winborder = "rounded"
+
       -- Configure diagnostic display
       vim.diagnostic.config({
         virtual_text = {
@@ -54,17 +58,11 @@ return {
         severity_sort = true,
         float = {
           border = "rounded",
-          source = "always",
+          source = true,
           header = "",
           prefix = "",
         },
       })
-
-      -- Customize LSP floating window borders
-      local handlers = {
-        ["textDocument/hover"] = vim.lsp.with(vim.lsp.handlers.hover, { border = "rounded" }),
-        ["textDocument/signatureHelp"] = vim.lsp.with(vim.lsp.handlers.signature_help, { border = "rounded" }),
-      }
 
       -- Setup diagnostic signs
       local signs = { Error = " ", Warn = " ", Hint = "󰠠 ", Info = " " }
@@ -72,21 +70,6 @@ return {
         local hl = "DiagnosticSign" .. type
         vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = "" })
       end
-
-      mason_lspconfig.setup({
-        ensure_installed = {
-          "pyright",
-          "clangd",
-          "vtsls",
-          "eslint",
-          "rust_analyzer",
-          "html",
-          "cssls",
-          "lua_ls",
-          "angularls",
-        },
-        automatic_installation = true,
-      })
 
       -- Define server-specific configurations
       local server_configs = {
@@ -137,22 +120,12 @@ return {
         },
       }
 
-      -- Setup all installed servers using modern API
-      local function setup_servers()
-        local installed = mason_lspconfig.get_installed_servers()
-        for _, server_name in ipairs(installed) do
-          -- Merge default config with server-specific config
-          local config = vim.tbl_deep_extend("force", {
-            capabilities = capabilities,
-            handlers = handlers,
-          }, server_configs[server_name] or {})
-
-          -- Use modern vim.lsp.config API
-          vim.lsp.config(server_name, config)
-
-          -- Enable the server for appropriate filetypes
-          vim.lsp.enable(server_name)
-        end
+      -- Register configs with the native LSP API (Neovim 0.11+). Shared
+      -- capabilities apply to every server via the "*" wildcard; per-server
+      -- overrides are merged on top.
+      vim.lsp.config("*", { capabilities = capabilities })
+      for server_name, config in pairs(server_configs) do
+        vim.lsp.config(server_name, config)
       end
 
       -- Setup on_attach via LspAttach autocmd (modern approach)
@@ -165,13 +138,20 @@ return {
         end,
       })
 
-      -- Setup servers now
-      setup_servers()
-
-      -- Re-setup when new servers are installed
-      vim.api.nvim_create_autocmd("User", {
-        pattern = "MasonToolsUpdateCompleted",
-        callback = setup_servers,
+      -- mason-lspconfig v2 auto-enables (vim.lsp.enable) every installed
+      -- server, including ones installed later, so no manual loop is needed.
+      mason_lspconfig.setup({
+        ensure_installed = {
+          "pyright",
+          "clangd",
+          "vtsls",
+          "eslint",
+          "rust_analyzer",
+          "html",
+          "cssls",
+          "lua_ls",
+          "angularls",
+        },
       })
     end,
   },

@@ -15,9 +15,7 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
--- Set up 'mapleader' and 'maplocalleader' before loading lazy.nvim
-vim.g.mapleader = " "
-vim.g.maplocalleader = "\\"
+-- Leader keys are set in init.lua before this module is required.
 
 -- Setup lazy.nvim
 require("lazy").setup({

@@ -1,0 +1,52 @@
+{
+  // Reference devcontainer for the "host Neovim + container tools" workflow.
+  //
+  // Your editor (Neovim + LSP) stays on the HOST. This container provides the
+  // runtime, project dependencies, and build/test tooling, which you drive from
+  // the terminal with:
+  //
+  //   devcontainer up   --workspace-folder .
+  //   devcontainer exec --workspace-folder . <cmd>
+  //
+  // Copy this file to <project>/.devcontainer/devcontainer.json and adapt the
+  // marked sections. devcontainer.json supports // comments (JSONC).
+
+  "name": "project-dev",
+
+  // --- Base: pick ONE -------------------------------------------------------
+  // (a) a prebuilt image (simplest):
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  // (b) your own Dockerfile:
+  //   "build": { "dockerfile": "Dockerfile" },
+  // (c) multi-service stack via compose:
+  //   "dockerComposeFile": "docker-compose.yml",
+  //   "service": "app",
+  //   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+
+  // --- Runtimes / CLI tooling ----------------------------------------------
+  // Prebuilt, composable features: https://containers.dev/features
+  // Uncomment the languages you need.
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": false,
+      "upgradePackages": true
+    }
+    // ,"ghcr.io/devcontainers/features/node:1":   { "version": "lts" }
+    // ,"ghcr.io/devcontainers/features/python:1": { "version": "3.12" }
+    // ,"ghcr.io/devcontainers/features/go:1":     {}
+    // ,"ghcr.io/devcontainers/features/rust:1":   {}
+  },
+
+  // --- Project setup --------------------------------------------------------
+  // Install dependencies + the dev tools you'll run inside the container.
+  // NOTE: do NOT install LSP servers here — with host-nvim the LSP runs on the
+  // host. The container only needs runtimes, deps, and test/build/format CLIs.
+  // Example: "npm ci" | "pip install -r requirements.txt" | "mix deps.get"
+  "postCreateCommand": "echo 'TODO: install project deps here'",
+
+  // --- File ownership -------------------------------------------------------
+  // The workspace is bind-mounted from the host. Match the container user to
+  // your host UID/GID so created files aren't root-owned on the host.
+  "remoteUser": "vscode",
+  "updateRemoteUserUID": true
+}

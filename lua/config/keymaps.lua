@@ -1,11 +1,7 @@
 local telescope = require('telescope')
 local builtin = require('telescope.builtin')
 
--- Keybindings for window navigation
-vim.keymap.set('n', '<C-h>', '<C-w>h', { noremap = true, silent = true, desc = "Move to left window" })
-vim.keymap.set('n', '<C-j>', '<C-w>j', { noremap = true, silent = true, desc = "Move to window below" })
-vim.keymap.set('n', '<C-k>', '<C-w>k', { noremap = true, silent = true, desc = "Move to window above" })
-vim.keymap.set('n', '<C-l>', '<C-w>l', { noremap = true, silent = true, desc = "Move to right window" })
+-- Window navigation is handled by vim-tmux-navigator (see lua/plugins/vim-tmux-navigator.lua)
 
 -- Resize splits - Best practice: Use Alt instead of Ctrl to avoid conflicts
 vim.keymap.set('n', '<M-Up>', ':resize +2<CR>', { noremap = true, silent = true, desc = "Increase window height" })
@@ -77,7 +73,7 @@ end
 vim.keymap.set("n", "<leader>e", "<cmd>NvimTreeToggle<cr>", { desc = "Toggle Nvim Tree" })
 
 -- Markdown Preview
-vim.api.nvim_set_keymap("n", "<leader>mp", ":MarkdownPreview<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "<leader>mp", "<cmd>MarkdownPreview<cr>", { silent = true, desc = "Markdown preview" })
 
 -- Terminal keybindings
 vim.keymap.set("n", "<leader>th", ":split | term<CR>",
@@ -86,55 +82,59 @@ vim.keymap.set("n", "<leader>tv", ":vsplit | term<CR>",
     { noremap = true, silent = true, desc = "Terminal vertical split" })
 vim.keymap.set("n", "<leader>tt", ":term<CR>", { noremap = true, silent = true, desc = "Terminal fullscreen" })
 
--- Refactoring Key Mappings
--- Telescope refactoring picker (shows all available refactoring actions)
-vim.keymap.set({ "n", "x" }, "<leader>rr", function()
-    require("telescope").extensions.refactoring.refactors()
-end, { noremap = true, silent = true, desc = "Refactoring menu" })
+-- Refactoring Key Mappings (refactoring.nvim)
+-- NOTE: extract/inline/debug helpers return key sequences (e.g. "g@"), so their
+-- mappings MUST be `expr = true` and `return` the call. In normal mode they wait
+-- for a motion/textobject; in visual mode they operate on the selection.
 
--- Extract refactorings (visual mode)
+-- Refactor menu via vim.ui.select (replaces the removed Telescope extension)
+vim.keymap.set({ "n", "x" }, "<leader>rr", function()
+    require("refactoring").select_refactor()
+end, { silent = true, desc = "Refactoring menu" })
+
+-- Extract refactorings (visual selection)
 vim.keymap.set("x", "<leader>re", function()
-    require("refactoring").refactor("Extract Function")
-end, { noremap = true, silent = true, desc = "Extract Function" })
+    return require("refactoring").extract_func()
+end, { expr = true, silent = true, desc = "Extract Function" })
 
 vim.keymap.set("x", "<leader>rf", function()
-    require("refactoring").refactor("Extract Function To File")
-end, { noremap = true, silent = true, desc = "Extract Function To File" })
+    return require("refactoring").extract_func_to_file()
+end, { expr = true, silent = true, desc = "Extract Function To File" })
 
 vim.keymap.set("x", "<leader>rv", function()
-    require("refactoring").refactor("Extract Variable")
-end, { noremap = true, silent = true, desc = "Extract Variable" })
+    return require("refactoring").extract_var()
+end, { expr = true, silent = true, desc = "Extract Variable" })
 
 -- Inline refactorings
 vim.keymap.set({ "n", "x" }, "<leader>ri", function()
-    require("refactoring").refactor("Inline Variable")
-end, { noremap = true, silent = true, desc = "Inline Variable" })
+    return require("refactoring").inline_var()
+end, { expr = true, silent = true, desc = "Inline Variable" })
 
 vim.keymap.set("n", "<leader>rI", function()
-    require("refactoring").refactor("Inline Function")
-end, { noremap = true, silent = true, desc = "Inline Function" })
+    return require("refactoring").inline_func()
+end, { expr = true, silent = true, desc = "Inline Function" })
 
--- Extract block (normal mode)
-vim.keymap.set("n", "<leader>rb", function()
-    require("refactoring").refactor("Extract Block")
-end, { noremap = true, silent = true, desc = "Extract Block" })
+-- NOTE: "Extract Block" / "Extract Block To File" were removed upstream and no
+-- longer exist in refactoring.nvim, so <leader>rb/<leader>rbf are gone.
 
-vim.keymap.set("n", "<leader>rbf", function()
-    require("refactoring").refactor("Extract Block To File")
-end, { noremap = true, silent = true, desc = "Extract Block To File" })
-
--- Debug operations
+-- Debug operations (require("refactoring.debug"))
+-- Print location marker on the current line
 vim.keymap.set({ "n", "x" }, "<leader>rp", function()
-    require("refactoring").debug.printf({ below = false })
-end, { noremap = true, silent = true, desc = "Debug Print" })
+    return require("refactoring.debug").print_loc({ output_location = "above" })
+end, { expr = true, silent = true, desc = "Debug Print (location)" })
 
-vim.keymap.set({ "n", "x" }, "<leader>rdv", function()
-    require("refactoring").debug.print_var()
-end, { noremap = true, silent = true, desc = "Debug Print Variable" })
+-- Print the variable: under the cursor (normal, via `iw`) or the selection (visual)
+vim.keymap.set("n", "<leader>rdv", function()
+    return require("refactoring.debug").print_var({}) .. "iw"
+end, { expr = true, silent = true, desc = "Debug Print Variable" })
+vim.keymap.set("x", "<leader>rdv", function()
+    return require("refactoring.debug").print_var({})
+end, { expr = true, silent = true, desc = "Debug Print Variable" })
 
-vim.keymap.set("n", "<leader>rdc", function()
-    require("refactoring").debug.cleanup({})
-end, { noremap = true, silent = true, desc = "Debug Cleanup" })
+-- Cleanup debug prints over a motion/textobject (normal) or selection (visual)
+vim.keymap.set({ "n", "x" }, "<leader>rdc", function()
+    return require("refactoring.debug").cleanup({})
+end, { expr = true, remap = true, silent = true, desc = "Debug Cleanup (motion/selection)" })
 
 -- System clipboard integration
 vim.keymap.set("v", "<C-c>", '"+y', { noremap = true, silent = true, desc = "Copy to system clipboard" })
@@ -176,17 +176,6 @@ vim.keymap.set("n", "<leader>r", function()
     require("utils.runner").run_file()
 end, { noremap = true, silent = true, desc = "Run current file in terminal" })
 
--- DevContainer keybindings
-vim.keymap.set("n", "<leader>dcu", "<cmd>DevcontainerStart<cr>", { desc = "DevContainer: Start (Up)" })
-vim.keymap.set("n", "<leader>dcd", "<cmd>DevcontainerStop<cr>", { desc = "DevContainer: Stop (Down)" })
-vim.keymap.set("n", "<leader>dca", "<cmd>DevcontainerAttach<cr>", { desc = "DevContainer: Attach shell" })
-vim.keymap.set("n", "<leader>dcb", "<cmd>DevcontainerBuild<cr>", { desc = "DevContainer: Build" })
-vim.keymap.set("n", "<leader>dcr", "<cmd>DevcontainerRemove<cr>", { desc = "DevContainer: Remove containers" })
-vim.keymap.set("n", "<leader>dci", "<cmd>DevcontainerInfo<cr>", { desc = "DevContainer: Info" })
-vim.keymap.set("n", "<leader>dcl", "<cmd>DevcontainerLogs<cr>", { desc = "DevContainer: View logs" })
-vim.keymap.set("n", "<leader>dce", "<cmd>DevcontainerExec ", { desc = "DevContainer: Execute command" })
-vim.keymap.set("n", "<leader>dco", "<cmd>DevcontainerOpenNearestConfig<cr>", { desc = "DevContainer: Open config" })
-
 -- LSP Keybindings (buffer-local, set on LspAttach)
 vim.api.nvim_create_autocmd("LspAttach", {
     callback = function(args)
@@ -223,10 +212,12 @@ vim.api.nvim_create_autocmd("LspAttach", {
         end, vim.tbl_extend("force", opts, { desc = "Format buffer" }))
 
         -- Diagnostics
-        vim.keymap.set("n", "[d", vim.diagnostic.goto_prev,
-            vim.tbl_extend("force", opts, { desc = "Previous diagnostic" }))
-        vim.keymap.set("n", "]d", vim.diagnostic.goto_next,
-            vim.tbl_extend("force", opts, { desc = "Next diagnostic" }))
+        vim.keymap.set("n", "[d", function()
+            vim.diagnostic.jump({ count = -1, float = true })
+        end, vim.tbl_extend("force", opts, { desc = "Previous diagnostic" }))
+        vim.keymap.set("n", "]d", function()
+            vim.diagnostic.jump({ count = 1, float = true })
+        end, vim.tbl_extend("force", opts, { desc = "Next diagnostic" }))
         vim.keymap.set("n", "<leader>ld", vim.diagnostic.open_float,
             vim.tbl_extend("force", opts, { desc = "Show diagnostic" }))
         vim.keymap.set("n", "<leader>lq", vim.diagnostic.setloclist,
