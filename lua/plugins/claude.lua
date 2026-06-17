@@ -23,8 +23,19 @@ return {
     "ClaudeCodeCloseAllDiffs",
   },
   keys = {
-    { "<leader>a",  nil,                              desc = "AI/Claude Code" },
-    { "<leader>ac", "<cmd>ClaudeCode<cr>",            desc = "Toggle Claude" },
+    { "<leader>a",  nil,                   desc = "AI/Claude Code" },
+    { "<leader>ac", "<cmd>ClaudeCode<cr>", desc = "Toggle Claude" },
+    {
+      "<leader>an",
+      -- Plain `ClaudeCode` only toggles an existing session, so to get a truly
+      -- fresh conversation we stop any running instance first, then start anew.
+      -- `pcall` keeps the stop from erroring when nothing is running.
+      function()
+        pcall(vim.cmd, "ClaudeCodeStop")
+        vim.cmd("ClaudeCodeStart")
+      end,
+      desc = "New Claude session",
+    },
     { "<leader>af", "<cmd>ClaudeCodeFocus<cr>",       desc = "Focus Claude" },
     { "<leader>ar", "<cmd>ClaudeCode --resume<cr>",   desc = "Resume Claude" },
     { "<leader>aC", "<cmd>ClaudeCode --continue<cr>", desc = "Continue Claude" },
