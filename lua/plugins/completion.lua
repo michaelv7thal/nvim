@@ -37,6 +37,9 @@ return {
                 )
             end
             cmp.setup({
+                enabled = function()
+                    return vim.api.nvim_get_option_value('buftype', { buf = 0 }) ~= 'terminal'
+                end,
                 snippet = {
                     expand = function(args)
                         vim.fn["vsnip#anonymous"](args.body)

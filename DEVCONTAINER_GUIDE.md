@@ -17,8 +17,8 @@ use.
 > **LSP caveat (the trade-off of this model):** your LSP runs on the host, so it
 > can't see container-only dependencies (`node_modules`, a venv, `mix` deps,
 > etc.). In-editor diagnostics reflect the *host* environment. If you need
-> diagnostics that match the container exactly, you'd run Neovim *inside* the
-> container instead (a different setup — ask and I'll scaffold it).
+> diagnostics that match the container exactly, run Neovim *inside* the
+> container instead — see [Neovim inside the container](#neovim-inside-the-container).
 
 ## Prerequisites
 
@@ -63,6 +63,51 @@ devcontainer up --workspace-folder . --remove-existing-container
 
 (If you want one-keystroke `dcup`/`dcx` aliases in `~/.bashrc`, ask and I'll add
 them.)
+
+## Neovim inside the container
+
+The opposite model: **Neovim runs in the container**, so its LSP/format/test
+tooling sees the container's exact dependencies — no host-vs-container
+diagnostic skew. Use this when the toolchain is the point (container-only deps,
+matching CI exactly, a runtime you don't have on the host).
+
+The trick is to share the *config* but not the *data*:
+
+- **Bind-mount** the central `~/.config/nvim` (read-write) so it's the same
+  files inside and out — one source of truth, edits sync both ways.
+- Keep `~/.local/share/nvim` (lazy plugins, **Mason** LSP servers, compiled
+  **Treesitter** parsers) in a **container-local named volume**. These are
+  arch/libc-specific native artifacts that must never be shared with the host;
+  the volume also makes rebuilds fast (no re-download/recompile each time).
+
+Scaffolded reference: `~/.config/nvim/templates/devcontainer-nvim-inside/devcontainer.json`.
+
+```bash
+mkdir -p myproject/.devcontainer
+cp ~/.config/nvim/templates/devcontainer-nvim-inside/devcontainer.json \
+   myproject/.devcontainer/devcontainer.json
+devcontainer up --workspace-folder .
+devcontainer exec --workspace-folder . nvim .   # full config, container-side LSP
+```
+
+Three things that bite if you skip them (the template handles all three):
+
+- **Neovim version.** This config needs **≥ 0.11** (native `vim.lsp.config`,
+  mason-lspconfig v2, `vim.diagnostic.jump`, `vim.o.winborder`). `apt-get
+  install neovim` ships something far older — use the Neovim devcontainer
+  feature or a tarball/appimage. *(A too-old nvim is the usual reason a config
+  "installs but does nothing.")*
+- **Build deps for Mason/Treesitter.** A C compiler + `git`/`curl`/`unzip`, plus
+  **Node** for the npm-based servers you `ensure_installed` (vtsls, eslint,
+  pyright, angularls, html, cssls), plus `ripgrep`/`fd` for Telescope — **and the
+  `tree-sitter` CLI**: nvim-treesitter's `main` branch compiles parsers by
+  invoking it, so a C compiler alone won't build them (`npm i -g tree-sitter-cli`).
+- **Volume ownership.** Named volumes mount root-owned; `chown` the data dir to
+  the remote user in `postCreateCommand` or the first launch can't write to it.
+
+> **Clipboard:** a containerized Neovim has no host clipboard provider. Neovim
+> ≥ 0.10 falls back to OSC52 in many terminals; if yank-to-`+` doesn't reach the
+> host, set an explicit OSC52 `vim.g.clipboard`.
 
 ## Troubleshooting
 

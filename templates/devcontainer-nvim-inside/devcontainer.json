@@ -1,0 +1,80 @@
+{
+  // Reference devcontainer for the "Neovim INSIDE the container" workflow.
+  //
+  // Opposite trade-off from templates/devcontainer/: here your editor runs in
+  // the container, so the LSP/format/test tooling sees the container's exact
+  // dependencies (node_modules, venv, mix deps, ...). The price is that Neovim,
+  // its plugins, and its LSP servers must exist inside the container.
+  //
+  // The design that makes this pleasant:
+  //   * BIND-MOUNT your central ~/.config/nvim (read-write) -> single source of
+  //     truth. Edit config on the host or in the container; it's the same files.
+  //   * Keep ~/.local/share/nvim (plugins, Mason servers, compiled Treesitter
+  //     parsers) in a CONTAINER-LOCAL named volume. These are arch/libc-specific
+  //     native bits that must NOT be shared with the host, and the volume makes
+  //     rebuilds fast (no re-download/recompile every time).
+  //
+  // Copy to <project>/.devcontainer/devcontainer.json and adapt. JSONC = // ok.
+
+  "name": "project-dev-nvim",
+
+  // --- Base: pick ONE -------------------------------------------------------
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  //   "build": { "dockerfile": "Dockerfile" },
+  //   "dockerComposeFile": "docker-compose.yml", "service": "app",
+  //   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": false,
+      "upgradePackages": true
+    },
+
+    // Neovim itself. MUST be >= 0.11 for this config (native vim.lsp.config /
+    // mason-lspconfig v2 / vim.diagnostic.jump / vim.o.winborder). Ubuntu's apt
+    // nvim is far too old -- use this feature (installs a recent release) or a
+    // tarball/appimage in a Dockerfile. Do NOT rely on `apt-get install neovim`.
+    "ghcr.io/duduribeiro/devcontainer-features/neovim:1": { "version": "stable" },
+
+    // Node is required: most Mason servers you ensure_installed are npm-based
+    // (vtsls, eslint, pyright, angularls, html, cssls). Add language features
+    // for whatever the PROJECT itself needs as well.
+    "ghcr.io/devcontainers/features/node:1": { "version": "lts" }
+    // ,"ghcr.io/devcontainers/features/python:1": { "version": "3.12" }
+    // ,"ghcr.io/devcontainers/features/rust:1":   {}
+  },
+
+  "mounts": [
+    // (1) Central Neovim config from the host. Read-write so :Lazy update /
+    //     :Mason changes and lazy-lock.json edits persist back to the host repo.
+    "source=${localEnv:HOME}/.config/nvim,target=/home/vscode/.config/nvim,type=bind,consistency=cached",
+
+    // (2) OPTIONAL: share GitHub Copilot auth so you don't re-login per container.
+    "source=${localEnv:HOME}/.config/github-copilot,target=/home/vscode/.config/github-copilot,type=bind,consistency=cached",
+
+    // (3) Container-local data dir (plugins + Mason + Treesitter parsers).
+    //     Named volume keyed on the container so it persists across rebuilds but
+    //     is NEVER shared with the host. State/cache are fine left ephemeral.
+    "source=nvim-data-${devcontainerId},target=/home/vscode/.local/share/nvim,type=volume"
+  ],
+
+  // --- Project + Neovim setup ----------------------------------------------
+  // - chown the named volume (volumes mount root-owned) to the remote user.
+  // - install build deps Treesitter/Mason need: a C compiler, git, curl, unzip,
+  //   plus ripgrep/fd for Telescope.
+  // - install the `tree-sitter` CLI: the nvim-treesitter `main` branch compiles
+  //   parsers by calling it (a C compiler ALONE is not enough). Easiest via the
+  //   npm feature above; or cargo, or a release binary.
+  // - warm the plugin set headlessly. (Mason's ensure_installed and Treesitter
+  //   parser installs run on the first interactive launch; the first `nvim .`
+  //   finishes installing LSP servers + parsers.)
+  // - then install the PROJECT's own deps (npm ci / pip install / mix deps.get).
+  "postCreateCommand": "sudo chown -R $(id -u):$(id -g) ~/.local/share/nvim && sudo apt-get update && sudo apt-get install -y build-essential git curl unzip ripgrep fd-find && sudo npm install -g tree-sitter-cli && nvim --headless '+Lazy! sync' +qa && echo 'TODO: install project deps here'",
+
+  // --- File ownership -------------------------------------------------------
+  // Match the container user to your host UID/GID so workspace files created in
+  // the container aren't root-owned on the host. (Change the /home/vscode mount
+  // targets above too if you change remoteUser.)
+  "remoteUser": "vscode",
+  "updateRemoteUserUID": true
+}

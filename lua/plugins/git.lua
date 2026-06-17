@@ -75,4 +75,44 @@ return {
       vim.keymap.set("n", "<leader>gl", ":Gpull<CR>", { desc = "Git pull" })
     end,
   },
+
+  -- Inline merge-conflict resolution (highlights markers, pick a side in-place)
+  {
+    "akinsho/git-conflict.nvim",
+    version = "*",
+    event = "BufReadPre",
+    config = function()
+      require("git-conflict").setup({
+        -- Custom maps under <leader>x; only active in buffers that contain a
+        -- conflict. Avoids shadowing Vim's `cb`/`co`/`ct` change motions.
+        default_mappings = {
+          ours   = "<leader>xo",
+          theirs = "<leader>xt",
+          both   = "<leader>xb",
+          none   = "<leader>x0",
+          next   = "]x",
+          prev   = "[x",
+        },
+        disable_diagnostics = false, -- keep LSP diagnostics while resolving
+      })
+      vim.keymap.set("n", "<leader>xl", "<cmd>GitConflictListQf<CR>",
+        { desc = "Conflict: list all in quickfix" })
+    end,
+  },
+
+  -- Rich diff browser + 3-way merge tool
+  {
+    "sindrets/diffview.nvim",
+    dependencies = { "nvim-lua/plenary.nvim" },
+    cmd = { "DiffviewOpen", "DiffviewClose", "DiffviewToggleFiles", "DiffviewFileHistory" },
+    keys = {
+      { "<leader>gv", "<cmd>DiffviewOpen<CR>",          desc = "Diffview: open (merge/diff)" },
+      { "<leader>gV", "<cmd>DiffviewClose<CR>",         desc = "Diffview: close" },
+      { "<leader>gh", "<cmd>DiffviewFileHistory<CR>",   desc = "Diffview: repo history" },
+      { "<leader>gH", "<cmd>DiffviewFileHistory %<CR>", desc = "Diffview: current file history" },
+    },
+    config = function()
+      require("diffview").setup()
+    end,
+  },
 }

@@ -54,6 +54,39 @@ opt.completeopt = { "menu", "menuone", "noselect" } -- Better completion experie
 
 opt.clipboard = "unnamedplus"                       -- Use system clipboard by default
 
+-- Headless / devcontainer clipboard via OSC52.
+-- `unnamedplus` routes every yank to the `+` register, but a headless box (e.g.
+-- inside the devcontainer) has no $DISPLAY and no wl-copy/xclip to back it, and
+-- Neovim only auto-enables its built-in OSC52 provider over SSH ($SSH_TTY) — not
+-- in a container. So when there's no local display AND no native clipboard tool,
+-- drive the system clipboard over OSC52, which reaches the HOST clipboard through
+-- the terminal (Ghostty/iTerm2/kitty/wezterm/tmux). On a real desktop session
+-- this branch is skipped, leaving the native provider in charge.
+local _has_display = vim.env.DISPLAY ~= nil or vim.env.WAYLAND_DISPLAY ~= nil
+local _has_clip_tool = vim.fn.executable("wl-copy") == 1
+  or vim.fn.executable("xclip") == 1
+  or vim.fn.executable("xsel") == 1
+  or vim.fn.executable("pbcopy") == 1
+if not _has_display and not _has_clip_tool then
+  local osc52 = require("vim.ui.clipboard.osc52")
+  vim.g.clipboard = {
+    name = "OSC 52",
+    copy = { ["+"] = osc52.copy("+"), ["*"] = osc52.copy("*") },
+    paste = { ["+"] = osc52.paste("+"), ["*"] = osc52.paste("*") },
+  }
+end
+
+-- vim-tmux-navigator across the devcontainer boundary.
+-- The host tmux can't see this nvim in its process list — we run behind
+-- `devcontainer exec`, which shows up as node/docker on the host pane — so tmux's
+-- default ps-based is_vim check fails and it steals <C-h/j/k/l> for pane switching
+-- instead of forwarding them to nvim. Advertise "this is nvim" in-band via the
+-- terminal title, which DOES cross the container boundary and lands in tmux's
+-- #{pane_title}; the matching tmux is_vim greps for the "nvim:" prefix (see
+-- ~/.config/tmux/tmux.conf). Harmless on the host / outside tmux.
+opt.title = true
+opt.titlestring = "nvim:%t"
+
 -- Best practice: Better search experience
 opt.hlsearch = true      -- Highlight search results
 opt.inccommand = "split" -- Show substitution preview in split
