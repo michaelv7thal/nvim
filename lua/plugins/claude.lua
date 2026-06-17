@@ -27,12 +27,34 @@ return {
     { "<leader>ac", "<cmd>ClaudeCode<cr>", desc = "Toggle Claude" },
     {
       "<leader>an",
-      -- Plain `ClaudeCode` only toggles an existing session, so to get a truly
-      -- fresh conversation we stop any running instance first, then start anew.
-      -- `pcall` keeps the stop from erroring when nothing is running.
+      -- Recreate the ONE interactive Claude conversation (the chat you type
+      -- into), so there is only ever a single live dev session.
+      --
+      -- `ClaudeCodeStart`/`Stop` manage only the background WebSocket server
+      -- (the "port"); they do NOT touch the conversation, which runs as a
+      -- `claude` process inside a terminal owned by the terminal provider. So a
+      -- true restart means force-wiping that terminal buffer -- which kills the
+      -- process for both the snacks and native providers (the native provider's
+      -- close only hides the buffer and would orphan the process) -- and then
+      -- opening a single fresh session. `auto_start` keeps the server alive.
       function()
-        pcall(vim.cmd, "ClaudeCodeStop")
-        vim.cmd("ClaudeCodeStart")
+        local term_ok, terminal = pcall(require, "claudecode.terminal")
+        if term_ok then
+          local bufnr = terminal.get_active_terminal_bufnr()
+          if bufnr and vim.api.nvim_buf_is_valid(bufnr) then
+            pcall(vim.api.nvim_buf_delete, bufnr, { force = true })
+          end
+        end
+
+        -- Ensure the integration server is up (start it only when it isn't, to
+        -- avoid a spurious "already running" warning), then open the fresh
+        -- conversation.
+        local cc_ok, claudecode = pcall(require, "claudecode")
+        if cc_ok and not (claudecode.state and claudecode.state.server) then
+          claudecode.start(false)
+        end
+
+        vim.cmd("ClaudeCodeOpen")
       end,
       desc = "New Claude session",
     },
