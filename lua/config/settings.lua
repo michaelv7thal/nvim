@@ -15,6 +15,7 @@ opt.smartindent = true -- Auto-indent new lines
 opt.ignorecase = true -- Ignore case in search patterns
 opt.smartcase = true  -- Override ignorecase if search includes uppercase
 opt.incsearch = true  -- Show search matches as you type
+opt.hlsearch = true   -- Highlight search matches
 
 -- Appearance
 opt.termguicolors = true -- Enable 24-bit RGB colors
@@ -64,9 +65,9 @@ opt.clipboard = "unnamedplus"                       -- Use system clipboard by d
 -- this branch is skipped, leaving the native provider in charge.
 local _has_display = vim.env.DISPLAY ~= nil or vim.env.WAYLAND_DISPLAY ~= nil
 local _has_clip_tool = vim.fn.executable("wl-copy") == 1
-  or vim.fn.executable("xclip") == 1
-  or vim.fn.executable("xsel") == 1
-  or vim.fn.executable("pbcopy") == 1
+    or vim.fn.executable("xclip") == 1
+    or vim.fn.executable("xsel") == 1
+    or vim.fn.executable("pbcopy") == 1
 if not _has_display and not _has_clip_tool then
   local osc52 = require("vim.ui.clipboard.osc52")
   vim.g.clipboard = {

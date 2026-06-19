@@ -90,7 +90,7 @@ devcontainer up --workspace-folder .
 devcontainer exec --workspace-folder . nvim .   # full config, container-side LSP
 ```
 
-Three things that bite if you skip them (the template handles all three):
+Four things that bite if you skip them (the template handles all four):
 
 - **Neovim version.** This config needs **≥ 0.11** (native `vim.lsp.config`,
   mason-lspconfig v2, `vim.diagnostic.jump`, `vim.o.winborder`). `apt-get
@@ -102,8 +102,24 @@ Three things that bite if you skip them (the template handles all three):
   pyright, angularls, html, cssls), plus `ripgrep`/`fd` for Telescope — **and the
   `tree-sitter` CLI**: nvim-treesitter's `main` branch compiles parsers by
   invoking it, so a C compiler alone won't build them (`npm i -g tree-sitter-cli`).
-- **Volume ownership.** Named volumes mount root-owned; `chown` the data dir to
-  the remote user in `postCreateCommand` or the first launch can't write to it.
+- **Volume ownership (chown the *parents*, and self-heal on every start).** Named
+  volumes mount root-owned, **and Docker creates the volume's parent dirs
+  (`~/.local`, `~/.local/share`) as root** to host the mount — which also blocks
+  `~/.local/state/nvim`, so nvim can't even write its log. `chown` **all of
+  `~/.local`** (not just the volume) to the remote user. Do the one-time
+  recursive fix in `postCreateCommand` **and** re-assert it (non-recursive) in
+  `postStartCommand`: those parent dirs come back root-owned on every container
+  *recreate*, and a chown buried in a long `&&` chain is silently skipped the
+  moment an earlier step fails. Symptom if you skip it: `Failed to clone
+  lazy.nvim: ... could not create leading directories ... Permission denied`.
+- **Don't force public clones through SSH.** If the project's setup runs
+  `git config --global url."git@github.com:".insteadOf "https://github.com/"`,
+  **every** `https://github.com/...` clone (lazy.nvim and all its plugins) is
+  rewritten to SSH — and a *headless* `nvim '+Lazy! sync'` then blocks forever on
+  an SSH auth prompt when no key is loaded in the container's agent. Use
+  **`pushInsteadOf`** instead of `insteadOf` (pushes still go over SSH; fetches
+  use anonymous HTTPS), and run the headless sync with
+  `GIT_SSH_COMMAND='ssh -o BatchMode=yes'` so it fails fast instead of hanging.
 
 > **Clipboard:** a containerized Neovim has no host clipboard provider. Neovim
 > ≥ 0.10 falls back to OSC52 in many terminals; if yank-to-`+` doesn't reach the
@@ -133,6 +149,22 @@ docker compose -f .devcontainer/*.yml down
 in `devcontainer.json` (the template already does).
 
 **Docker daemon not running** — `docker ps` to check.
+
+**`Failed to clone lazy.nvim: ... could not create leading directories ... Permission denied`**
+— the nvim data dir or its parents are root-owned (see *Volume ownership* above).
+Fix a live container without rebuilding, then re-warm plugins:
+
+```bash
+devcontainer exec --workspace-folder . sudo chown -R $(id -u):$(id -g) ~/.local
+devcontainer exec --workspace-folder . bash -c "GIT_SSH_COMMAND='ssh -o BatchMode=yes' nvim --headless '+Lazy! sync' +qa"
+```
+
+**Headless `Lazy! sync` hangs (empty `~/.local/share/nvim/lazy`)** — a github
+HTTPS→SSH `insteadOf` rewrite is sending plugin clones over SSH with no key
+loaded, so git is stuck on an auth prompt. Switch the rule to `pushInsteadOf`
+and re-run with `GIT_SSH_COMMAND='ssh -o BatchMode=yes'` (see *Don't force public
+clones through SSH* above). Verify the rewrite with
+`git config --global --get-regexp insteadof`.
 
 ## Reference
 

@@ -5,7 +5,9 @@ vim.g.copilot_filetypes = {
 -- Disable Copilot's default <Tab> keymap to avoid conflict with nvim-cmp
 vim.g.copilot_no_tab_map = true
 return {
-    -- GitHub Copilot core plugin (must load before copilot-cmp)
+    -- GitHub Copilot — provides inline ghost-text suggestions, accepted with <Tab>.
+    -- This is the SOLE inline-suggestion renderer; cmp ghost_text is disabled below
+    -- so two engines never draw at the same cursor cell (that thrashes/hangs Neovim).
     {
         'github/copilot.vim',
         lazy = false, -- always load
@@ -19,13 +21,6 @@ return {
             'hrsh7th/cmp-path',       -- File path completion
             'hrsh7th/cmp-vsnip',      -- Snippet completion
             'hrsh7th/vim-vsnip',      -- Snippet engine
-            {
-                'zbirenbaum/copilot-cmp',
-                dependencies = { 'github/copilot.vim' },
-                config = function()
-                    require("copilot_cmp").setup()
-                end,
-            },
         },
         config = function()
             local cmp = require('cmp')
@@ -57,10 +52,15 @@ return {
                         elseif vim.fn["vsnip#expandable"]() == 1 then
                             feedkey("<Plug>(vsnip-expand-or-jump)", "")
                         else
-                            -- Accept Copilot suggestion if available
-                            local copilot_keys = vim.fn['copilot#Accept']()
+                            -- Accept Copilot suggestion if available.
+                            -- Pass "" so copilot#Accept returns "" (not a literal
+                            -- <Tab>) when there is no suggestion, making the guard
+                            -- below work and fallback() actually reachable. Feed
+                            -- with 'n' (noremap) so the keys are NOT re-fed through
+                            -- this same <Tab> mapping (that re-entrancy froze Neovim).
+                            local copilot_keys = vim.fn['copilot#Accept']("")
                             if copilot_keys ~= '' then
-                                vim.api.nvim_feedkeys(copilot_keys, 'i', true)
+                                vim.api.nvim_feedkeys(copilot_keys, 'in', true)
                             else
                                 fallback()
                             end
@@ -78,7 +78,6 @@ return {
                 }),
                 sources = cmp.config.sources({
                     { name = 'nvim_lsp' },
-                    { name = 'copilot' },
                     { name = 'vsnip' },
                 }, {
                     { name = 'buffer' },
@@ -88,7 +87,6 @@ return {
                     format = function(entry, vim_item)
                         vim_item.menu = ({
                             nvim_lsp = "[LSP]",
-                            copilot = "[Copilot]",
                             vsnip = "[Snippet]",
                             buffer = "[Buffer]",
                             path = "[Path]",
@@ -97,7 +95,11 @@ return {
                     end,
                 },
                 experimental = {
-                    ghost_text = true, -- Copilot ghost text enabled
+                    -- OFF on purpose: copilot.vim already renders inline ghost text.
+                    -- Enabling this puts a SECOND ghost-text overlay at the same cursor
+                    -- cell as Copilot's; the two re-render against each other on every
+                    -- keystroke and hang Neovim. LSP results show in the popup menu only.
+                    ghost_text = false,
                 },
             })
             -- Git commit completion (optional: requires 'petertriho/cmp-git')

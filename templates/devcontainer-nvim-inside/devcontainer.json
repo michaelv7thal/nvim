@@ -59,17 +59,36 @@
   ],
 
   // --- Project + Neovim setup ----------------------------------------------
-  // - chown the named volume (volumes mount root-owned) to the remote user.
+  // postCreate runs ONCE at create time. The steps are ordered deliberately:
+  // - chown ALL of ~/.local (NOT just ~/.local/share/nvim) to the remote user,
+  //   FIRST and separated by `;` so a later failure can't skip it. Docker creates
+  //   the named volume's PARENT dirs (~/.local, ~/.local/share) as root to host
+  //   the mount, which also blocks ~/.local/state/nvim (the log dir) -- chowning
+  //   only the volume leaves nvim unable to write its state and log.
   // - install build deps Treesitter/Mason need: a C compiler, git, curl, unzip,
   //   plus ripgrep/fd for Telescope.
   // - install the `tree-sitter` CLI: the nvim-treesitter `main` branch compiles
   //   parsers by calling it (a C compiler ALONE is not enough). Easiest via the
   //   npm feature above; or cargo, or a release binary.
-  // - warm the plugin set headlessly. (Mason's ensure_installed and Treesitter
-  //   parser installs run on the first interactive launch; the first `nvim .`
-  //   finishes installing LSP servers + parsers.)
+  // - warm the plugin set headlessly. GIT_SSH_COMMAND='ssh -o BatchMode=yes' is a
+  //   guard: if anything (e.g. a project's own git config) rewrites github HTTPS
+  //   clones to SSH and no key is loaded in the container's agent, the clone
+  //   blocks on an interactive auth prompt and the headless sync HANGS FOREVER.
+  //   BatchMode makes it fail fast instead. (Better still: use `pushInsteadOf`,
+  //   never plain `insteadOf`, for any github SSH rewrite -- see DEVCONTAINER_GUIDE.md.)
   // - then install the PROJECT's own deps (npm ci / pip install / mix deps.get).
-  "postCreateCommand": "sudo chown -R $(id -u):$(id -g) ~/.local/share/nvim && sudo apt-get update && sudo apt-get install -y build-essential git curl unzip ripgrep fd-find && sudo npm install -g tree-sitter-cli && nvim --headless '+Lazy! sync' +qa && echo 'TODO: install project deps here'",
+  "postCreateCommand": "sudo chown -R $(id -u):$(id -g) ~/.local; sudo apt-get update && sudo apt-get install -y build-essential git curl unzip ripgrep fd-find && sudo npm install -g tree-sitter-cli && GIT_SSH_COMMAND='ssh -o BatchMode=yes' nvim --headless '+Lazy! sync' +qa && echo 'TODO: install project deps here'",
+
+  // postStart runs on EVERY start (create, rebuild, restart) -- self-heals the
+  // data-dir ownership so a future rebuild can't reintroduce the "could not
+  // create leading directories ... Permission denied" lazy.nvim clone failure.
+  // Docker recreates ~/.local + ~/.local/share as root on every recreate, and the
+  // postCreate chown above only runs at create time behind a long `&&` chain that
+  // a single failing step skips. This re-asserts ownership cheaply and
+  // unconditionally (non-recursive: the volume's CONTENTS are chowned once by
+  // postCreate and persist IN the volume; only these transient parent dirs need
+  // re-fixing). NOTE: if you change remoteUser, change `vscode` here too.
+  "postStartCommand": "bash -c 'sudo install -d -o vscode -g vscode ~/.local ~/.local/share ~/.local/state ~/.local/state/nvim 2>/dev/null || true; sudo chown vscode:vscode ~/.local ~/.local/share ~/.local/share/nvim 2>/dev/null || true'",
 
   // --- File ownership -------------------------------------------------------
   // Match the container user to your host UID/GID so workspace files created in
