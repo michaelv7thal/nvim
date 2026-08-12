@@ -7,6 +7,7 @@ return {
             sync_root_with_cwd = true,
             view = {
                 width = 30,
+                preserve_window_proportions = true,
             },
             git = {
                 enable = true,

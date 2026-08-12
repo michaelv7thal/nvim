@@ -22,8 +22,9 @@ opt.termguicolors = true -- Enable 24-bit RGB colors
 opt.cursorline = true    -- Highlight the current line
 
 -- Splits
-opt.splitbelow = true -- Split window below
-opt.splitright = true -- Split window to the right
+opt.splitbelow = true  -- Split window below
+opt.splitright = true  -- Split window to the right
+opt.equalalways = false -- Don't auto-resize other windows when a split opens/closes
 
 -- Enable/disable line wrapping
 opt.wrap = true
@@ -34,6 +35,20 @@ opt.signcolumn = "yes" -- Always show the sign column
 
 -- accept mouse input
 opt.mouse = "a"
+
+-- Terminal shell.
+-- `:term` spawns &shell, which Neovim derives from $SHELL and falls back to a
+-- bare "sh" (dash in this image) when $SHELL is empty — as it is in the process
+-- that launches nvim inside the devcontainer. That breaks the prompt twice over:
+-- dash isn't the shell we want, and the devcontainer's ~/.bashrc *exports* PS1,
+-- so any non-bash child inherits a prompt full of bash-only escapes (\[, \], \u,
+-- \w) and prints them literally. Pin bash, which reads ~/.bashrc and renders
+-- that prompt as intended. Guarded by exepath so a box without bash keeps the
+-- default rather than getting an unusable &shell.
+local _bash = vim.fn.exepath("bash")
+if _bash ~= "" then
+  opt.shell = _bash
+end
 
 -- Add colorcolumn incl. setting
 opt.colorcolumn = "80"
@@ -76,6 +91,22 @@ if not _has_display and not _has_clip_tool then
     paste = { ["+"] = osc52.paste("+"), ["*"] = osc52.paste("*") },
   }
 end
+
+-- Advertise "Neovim is running here" to kitty via a user variable, so kitty can
+-- forward Ctrl+Shift+C/V to us instead of running its own copy/paste while we're
+-- focused (see the --when-focus-on maps in ~/.config/kitty/kitty.conf, plus the
+-- <C-S-c>/<C-S-v> maps in keymaps.lua). The flag lives on this window: set on
+-- entry, cleared on exit so the shell gets kitty's native clipboard shortcuts
+-- back. kitty reads it from the OSC 1337 SetUserVar sequence; the value must be
+-- base64-encoded, and an empty value unsets it. Harmless on other terminals or
+-- headless boxes — the escape sequence is simply ignored there.
+local function kitty_editor_flag(active)
+  vim.api.nvim_ui_send(active
+    and "\027]1337;SetUserVar=in_editor=" .. vim.base64.encode("1") .. "\027\\"
+    or "\027]1337;SetUserVar=in_editor\027\\")
+end
+vim.api.nvim_create_autocmd("VimEnter", { callback = function() kitty_editor_flag(true) end })
+vim.api.nvim_create_autocmd("VimLeavePre", { callback = function() kitty_editor_flag(false) end })
 
 -- vim-tmux-navigator across the devcontainer boundary.
 -- The host tmux can't see this nvim in its process list — we run behind

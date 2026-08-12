@@ -157,6 +157,15 @@ vim.keymap.set("n", "<C-c>", '"+yy', { noremap = true, silent = true, desc = "Co
 vim.keymap.set("n", "<C-v>", '"+p', { noremap = true, silent = true, desc = "Paste from system clipboard" })
 vim.keymap.set("i", "<C-v>", '<C-r>+', { noremap = true, silent = true, desc = "Paste from system clipboard (insert)" })
 
+-- Same clipboard ops on Ctrl+Shift+C/V, to match kitty's terminal copy/paste.
+-- kitty forwards these keys to us only while Neovim is focused (see the
+-- in_editor user-var dance in settings.lua + kitty.conf); requires kitty's
+-- keyboard protocol, which Neovim negotiates automatically in modern kitty.
+vim.keymap.set("v", "<C-S-c>", '"+y', { noremap = true, silent = true, desc = "Copy to system clipboard" })
+vim.keymap.set("n", "<C-S-c>", '"+yy', { noremap = true, silent = true, desc = "Copy line to system clipboard" })
+vim.keymap.set("n", "<C-S-v>", '"+p', { noremap = true, silent = true, desc = "Paste from system clipboard" })
+vim.keymap.set("i", "<C-S-v>", '<C-r>+', { noremap = true, silent = true, desc = "Paste from system clipboard (insert)" })
+
 -- Copy file paths to system clipboard
 vim.keymap.set("n", "<leader>cp", function()
   vim.fn.setreg("+", vim.fn.expand("%:."))
