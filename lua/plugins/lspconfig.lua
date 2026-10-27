@@ -151,6 +151,7 @@ return {
           "cssls",
           "lua_ls",
           "angularls",
+          "terraformls",
         },
       })
     end,

@@ -35,7 +35,15 @@ return {
         "html", "css", "json",
         "markdown", "markdown_inline",
         "bash", "c", "cpp",
+        "terraform", "hcl",
       }
+
+      -- Neovim guesses `.tf` by content and falls back to TinyFugue (`tf`) for
+      -- empty files or ones starting with `//` / `/*` comments; always use
+      -- terraform. `.tfvars` already maps to `terraform-vars` (terraform parser).
+      vim.filetype.add({
+        extension = { tf = "terraform" },
+      })
 
       -- Install only the missing ones (install is async, non-blocking).
       local have = {}
